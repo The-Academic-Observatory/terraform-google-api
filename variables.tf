@@ -49,11 +49,11 @@ EOF
     observatory_db_uri = string
   })
 
-  default = object({
+  default = {
     create = false
     vpc_connector_name = null
     observatory_db_uri = null
-  })
+  }
 
   validation {
     condition = (create == true && vpc_connector_name != null && observatory_db_uri != null) || (create == false &&
@@ -75,11 +75,11 @@ EOF
     elasticsearch_host = string
   })
 
-  default = object({
+  default = {
     create = false
     elasticsearch_api_key = null
     elasticsearch_host = null
-  })
+  }
 
   validation {
     condition = (create == true && elasticsearch_api_key != null && elasticsearch_host != null) || (create == false &&
