@@ -71,11 +71,12 @@ module "observatory_db_uri" {
 
 locals {
   data_api_annotations = {"autoscaling.knative.dev/maxScale" = "10"}
+  vpc_connector_name = var.observatory_api.vpc_connector_name != null ? var.observatory_api.vpc_connector_name : ""
   observatory_api_annotations = {
         "autoscaling.knative.dev/maxScale" = "10"
         "run.googleapis.com/vpc-access-egress" : "private-ranges-only"
         "run.googleapis.com/vpc-access-connector" = "projects/${var.google_cloud.project_id}/locations/${var
-        .google_cloud.region}/connectors/${var.observatory_api.vpc_connector_name}"
+        .google_cloud.region}/connectors/${local.vpc_connector_name}"
       }
   annotations = var.observatory_api.create ? local.observatory_api_annotations : local.data_api_annotations
 }
@@ -89,21 +90,21 @@ resource "google_cloud_run_service" "api-backend" {
       containers {
         image = "gcr.io/${var.google_cloud.project_id}/${var.api.name}-api"
         dynamic "env" {
-          for_each = var.data_api.create ? 1 : 0
+          for_each = module.elasticsearch_host
           content {
             name = "ES_HOST"
             value = "sm://${var.google_cloud.project_id}/${var.api.name}-elasticsearch_host"
           }
         }
         dynamic "env" {
-          for_each = var.data_api.create ? 1 : 0
+          for_each = module.elasticsearch_api_key
           content {
             name = "ES_API_KEY"
             value = "sm://${var.google_cloud.project_id}/${var.api.name}-elasticsearch_api_key"
           }
         }
         dynamic "env" {
-          for_each = var.observatory_api.create ? 1 : 0
+          for_each = module.observatory_db_uri
           content {
             name = "OBSERVATORY_DB_URI"
             value = "sm://${var.google_cloud.project_id}/observatory_db_uri"
@@ -120,7 +121,6 @@ resource "google_cloud_run_service" "api-backend" {
     percent = 100
     latest_revision = true
   }
-  depends_on = [module.elasticsearch_host, module.elasticsearch_api_key, module.observatory_db_uri]
 }
 
 ########################################################################################################################

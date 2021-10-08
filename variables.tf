@@ -56,8 +56,12 @@ EOF
   }
 
   validation {
-    condition = (create == true && vpc_connector_name != null && observatory_db_uri != null) || (create == false &&
-    vpc_connector_name == null && observatory_db_uri == null)
+    condition = (
+    (var.observatory_api.create == true && var.observatory_api.vpc_connector_name != null
+    && var.observatory_api.observatory_db_uri != null) ||
+    (var.observatory_api.create == false && var.observatory_api.vpc_connector_name == null
+    && var.observatory_api.observatory_db_uri == null)
+    )
     error_message = "The vpc_connector_name and observatory_db_uri should be set (only) when creating the observatory API."
   }
 }
@@ -82,8 +86,12 @@ EOF
   }
 
   validation {
-    condition = (create == true && elasticsearch_api_key != null && elasticsearch_host != null) || (create == false &&
-    elasticsearch_api_key == null && elasticsearch_host == null)
+    condition = (
+    (var.data_api.create == true && var.data_api.elasticsearch_api_key != null
+    && var.data_api.elasticsearch_host != null) ||
+    (var.data_api.create == false && var.data_api.elasticsearch_api_key == null
+    && var.data_api.elasticsearch_host == null)
+    )
     error_message = "The elasticsearch_api_key and elasticsearch_host should be set (only) when creating theobservatory API."
   }
 }
