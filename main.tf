@@ -78,7 +78,7 @@ locals {
         "run.googleapis.com/vpc-access-connector" = "projects/${var.google_cloud.project_id}/locations/${var
         .google_cloud.region}/connectors/${local.vpc_connector_name}"
       }
-  annotations = var.observatory_api.vpc_connector_name != "" ? local.observatory_api_annotations : local.data_api_annotations
+  annotations = var.observatory_api.vpc_connector_name != null ? local.observatory_api_annotations : local.data_api_annotations
 }
 
 resource "google_cloud_run_service" "api-backend" {
