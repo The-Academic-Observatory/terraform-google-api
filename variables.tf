@@ -44,25 +44,13 @@ variable "observatory_api" {
 Settings related specifically to the Observatory API
 EOF
   type = object({
-    create = bool
     vpc_connector_name = string
     observatory_db_uri = string
   })
 
   default = {
-    create = false
     vpc_connector_name = null
     observatory_db_uri = null
-  }
-
-  validation {
-    condition = (
-    (var.observatory_api.create == true && var.observatory_api.vpc_connector_name != null
-    && var.observatory_api.observatory_db_uri != null) ||
-    (var.observatory_api.create == false && var.observatory_api.vpc_connector_name == null
-    && var.observatory_api.observatory_db_uri == null)
-    )
-    error_message = "The vpc_connector_name and observatory_db_uri should be set (only) when creating the observatory API."
   }
 }
 
@@ -74,24 +62,12 @@ api_key: The elasticsearch api key
 host: The address of the elasticsearch server
 EOF
   type = object({
-    create = bool
     elasticsearch_api_key = string
     elasticsearch_host = string
   })
 
   default = {
-    create = false
     elasticsearch_api_key = null
     elasticsearch_host = null
-  }
-
-  validation {
-    condition = (
-    (var.data_api.create == true && var.data_api.elasticsearch_api_key != null
-    && var.data_api.elasticsearch_host != null) ||
-    (var.data_api.create == false && var.data_api.elasticsearch_api_key == null
-    && var.data_api.elasticsearch_host == null)
-    )
-    error_message = "The elasticsearch_api_key and elasticsearch_host should be set (only) when creating theobservatory API."
   }
 }

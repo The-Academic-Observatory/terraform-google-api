@@ -46,7 +46,7 @@ resource "google_service_account" "api-backend_service_account" {
 }
 
 module "elasticsearch_host" {
-  count = var.data_api.create ? 1 : 0
+  count = var.data_api.elasticsearch_host != null ? 1 : 0
   source = "./modules/secret"
   secret_id = "${var.api.name}-elasticsearch_host"
   secret_data = var.data_api.elasticsearch_host
@@ -54,7 +54,7 @@ module "elasticsearch_host" {
 }
 
 module "elasticsearch_api_key" {
-  count = var.data_api.create ? 1 : 0
+  count = var.data_api.elasticsearch_api_key != null ? 1 : 0
   source = "./modules/secret"
   secret_id = "${var.api.name}-elasticsearch_api_key"
   secret_data = var.data_api.elasticsearch_api_key
@@ -62,7 +62,7 @@ module "elasticsearch_api_key" {
 }
 
 module "observatory_db_uri" {
-  count = var.observatory_api.create ? 1 : 0
+  count = var.observatory_api.observatory_db_uri != null ? 1 : 0
   source = "./modules/secret"
   secret_id = "observatory_db_uri"
   secret_data = var.observatory_api.observatory_db_uri
@@ -78,7 +78,7 @@ locals {
         "run.googleapis.com/vpc-access-connector" = "projects/${var.google_cloud.project_id}/locations/${var
         .google_cloud.region}/connectors/${local.vpc_connector_name}"
       }
-  annotations = var.observatory_api.create ? local.observatory_api_annotations : local.data_api_annotations
+  annotations = var.observatory_api.vpc_connector_name != "" ? local.observatory_api_annotations : local.data_api_annotations
 }
 
 resource "google_cloud_run_service" "api-backend" {
