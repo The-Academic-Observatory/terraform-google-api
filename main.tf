@@ -70,15 +70,18 @@ module "observatory_db_uri" {
 }
 
 locals {
-  data_api_annotations = {"autoscaling.knative.dev/maxScale" = "10"}
+  common_annotations = {
+    "autoscaling.knative.dev/maxScale" = "10"
+    "build_info" = var.build_info
+  }
   vpc_connector_name = var.observatory_api.vpc_connector_name != null ? var.observatory_api.vpc_connector_name : ""
-  observatory_api_annotations = {
-        "autoscaling.knative.dev/maxScale" = "10"
+  observatory_api_annotations = merge(
+  {
         "run.googleapis.com/vpc-access-egress" : "private-ranges-only"
-        "run.googleapis.com/vpc-access-connector" = "projects/${var.google_cloud.project_id}/locations/${var
-        .google_cloud.region}/connectors/${local.vpc_connector_name}"
-      }
-  annotations = var.observatory_api.vpc_connector_name != null ? local.observatory_api_annotations : local.data_api_annotations
+        "run.googleapis.com/vpc-access-connector" = "projects/${var.google_cloud.project_id}/locations/${var.google_cloud.region}/connectors/${local.vpc_connector_name}"
+  },
+          local.common_annotations)
+  annotations = var.observatory_api.vpc_connector_name != null ? local.observatory_api_annotations : local.common_annotations
 }
 
 resource "google_cloud_run_service" "api-backend" {
@@ -88,7 +91,7 @@ resource "google_cloud_run_service" "api-backend" {
   template {
     spec {
       containers {
-        image = "gcr.io/${var.google_cloud.project_id}/${var.api.name}-api"
+        image = "gcr.io/${var.google_cloud.project_id}/${var.api.name}-api:${var.api.image_tag}"
         dynamic "env" {
           for_each = module.elasticsearch_host
           content {

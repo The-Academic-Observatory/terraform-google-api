@@ -22,6 +22,15 @@ EOF
   })
 }
 
+variable "build_info" {
+  description = <<EOF
+The build info is passed on as an annotation to the Cloud Run backend service.
+If this info is changed, a new revision will be created.
+EOF
+  type = string
+  default = null
+}
+
 variable "api" {
   description = <<EOF
 Settings related to the API
@@ -36,6 +45,7 @@ EOF
 //    package = string
     domain_name = string
     subdomain = string
+    image_tag = string
   })
 }
 
