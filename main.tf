@@ -82,6 +82,12 @@ locals {
   },
           local.common_annotations)
   annotations = var.observatory_api.vpc_connector_name != null ? local.observatory_api_annotations : local.common_annotations
+
+  env_vars = {
+    "ES_HOST" = ["sm://${var.google_cloud.project_id}/${var.api.name}-elasticsearch_host", var.data_api.elasticsearch_host]
+    "ES_API_KEY" = ["sm://${var.google_cloud.project_id}/${var.api.name}-elasticsearch_api_key", var.data_api.elasticsearch_api_key]
+    "OBSERVATORY_DB_URI" = ["sm://${var.google_cloud.project_id}/observatory_db_uri", var.observatory_api.observatory_db_uri]
+  }
 }
 
 resource "google_cloud_run_service" "api-backend" {
@@ -93,24 +99,10 @@ resource "google_cloud_run_service" "api-backend" {
       containers {
         image = "gcr.io/${var.google_cloud.project_id}/${var.api.name}-api:${var.api.image_tag}"
         dynamic "env" {
-          for_each = module.elasticsearch_host
+          for_each = {for key, values in local.env_vars : key => values[0] if values[1] != null}
           content {
-            name = "ES_HOST"
-            value = "sm://${var.google_cloud.project_id}/${var.api.name}-elasticsearch_host"
-          }
-        }
-        dynamic "env" {
-          for_each = module.elasticsearch_api_key
-          content {
-            name = "ES_API_KEY"
-            value = "sm://${var.google_cloud.project_id}/${var.api.name}-elasticsearch_api_key"
-          }
-        }
-        dynamic "env" {
-          for_each = module.observatory_db_uri
-          content {
-            name = "OBSERVATORY_DB_URI"
-            value = "sm://${var.google_cloud.project_id}/observatory_db_uri"
+            name = env.key
+            value = env.value
           }
         }
       }
