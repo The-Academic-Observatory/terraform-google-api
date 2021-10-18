@@ -72,7 +72,6 @@ module "observatory_db_uri" {
 locals {
   common_annotations = {
     "autoscaling.knative.dev/maxScale" = "10"
-    "build_info" = var.build_info
   }
   vpc_connector_name = var.observatory_api.vpc_connector_name != null ? var.observatory_api.vpc_connector_name : ""
   observatory_api_annotations = merge(
@@ -97,7 +96,7 @@ resource "google_cloud_run_service" "api-backend" {
   template {
     spec {
       containers {
-        image = "gcr.io/${var.google_cloud.project_id}/${var.api.name}-api:${var.api.image_tag}"
+        image = "gcr.io/${var.google_cloud.project_id}/${var.api.name}-api:${var.image_tag}"
         dynamic "env" {
           for_each = {for key, values in local.env_vars : key => values[0] if values[1] != null}
           content {
