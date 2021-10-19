@@ -45,48 +45,12 @@ resource "google_service_account" "api-backend_service_account" {
   depends_on = [google_project_service.services["iam.googleapis.com"]]
 }
 
-module "elasticsearch_host" {
-  count = var.data_api.elasticsearch_host != null ? 1 : 0
+module "env_secret" {
+  for_each = toset(nonsensitive(keys(var.env_vars))) # Make keys of variable nonsensitive.
   source = "./modules/secret"
-  secret_id = "${var.api.name}-elasticsearch_host"
-  secret_data = var.data_api.elasticsearch_host
+  secret_id = each.key
+  secret_data = var.env_vars[each.key]
   service_account_email = google_service_account.api-backend_service_account.email
-}
-
-module "elasticsearch_api_key" {
-  count = var.data_api.elasticsearch_api_key != null ? 1 : 0
-  source = "./modules/secret"
-  secret_id = "${var.api.name}-elasticsearch_api_key"
-  secret_data = var.data_api.elasticsearch_api_key
-  service_account_email = google_service_account.api-backend_service_account.email
-}
-
-module "observatory_db_uri" {
-  count = var.observatory_api.observatory_db_uri != null ? 1 : 0
-  source = "./modules/secret"
-  secret_id = "observatory_db_uri"
-  secret_data = var.observatory_api.observatory_db_uri
-  service_account_email = google_service_account.api-backend_service_account.email
-}
-
-locals {
-  common_annotations = {
-    "autoscaling.knative.dev/maxScale" = "10"
-  }
-  vpc_connector_name = var.observatory_api.vpc_connector_name != null ? var.observatory_api.vpc_connector_name : ""
-  observatory_api_annotations = merge(
-  {
-        "run.googleapis.com/vpc-access-egress" : "private-ranges-only"
-        "run.googleapis.com/vpc-access-connector" = "projects/${var.google_cloud.project_id}/locations/${var.google_cloud.region}/connectors/${local.vpc_connector_name}"
-  },
-          local.common_annotations)
-  annotations = var.observatory_api.vpc_connector_name != null ? local.observatory_api_annotations : local.common_annotations
-
-  env_vars = {
-    "ES_HOST" = ["sm://${var.google_cloud.project_id}/${var.api.name}-elasticsearch_host", var.data_api.elasticsearch_host]
-    "ES_API_KEY" = ["sm://${var.google_cloud.project_id}/${var.api.name}-elasticsearch_api_key", var.data_api.elasticsearch_api_key]
-    "OBSERVATORY_DB_URI" = ["sm://${var.google_cloud.project_id}/observatory_db_uri", var.observatory_api.observatory_db_uri]
-  }
 }
 
 resource "google_cloud_run_service" "api-backend" {
@@ -96,19 +60,19 @@ resource "google_cloud_run_service" "api-backend" {
   template {
     spec {
       containers {
-        image = "gcr.io/${var.google_cloud.project_id}/${var.api.name}-api:${var.image_tag}"
+        image = "gcr.io/${var.google_cloud.project_id}/${var.api.name}-api:${var.api.image_tag}"
         dynamic "env" {
-          for_each = {for key, values in local.env_vars : key => values[0] if values[1] != null}
+          for_each = toset(nonsensitive(keys(var.env_vars)))
           content {
             name = env.key
-            value = env.value
+            value = "sm://${var.google_cloud.project_id}/${env.key}"
           }
         }
       }
       service_account_name = google_service_account.api-backend_service_account.email
     }
     metadata {
-      annotations = local.annotations
+      annotations = var.cloud_run_annotations
     }
   }
   traffic {

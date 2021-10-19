@@ -22,11 +22,6 @@ EOF
   })
 }
 
-variable "image_tag" {
-  type = string
-  default = null
-}
-
 variable "api" {
   description = <<EOF
 Settings related to the API
@@ -35,45 +30,31 @@ name: Name of the API project, e.g. academic-observatory or oaebu
 //package_name: Local path to the Data API package, e.g. /path/to/academic_observatory_workflows_api
 domain_name: the custom domain name for the API, used for the google cloud endpoints service
 subdomain: can be either 'project_id' or 'environment', used to determine a prefix for the domain_name
+image_tag: The image tag that will be used for the Cloud Run backend. If the value is null, Terraform will get the image
+tag from a local file "./image_build.txt".
 EOF
   type = object({
     name = string
-//    package = string
     domain_name = string
     subdomain = string
-//    image_tag = string
+    image_tag = string
   })
 }
 
-variable "observatory_api" {
+variable "env_vars" {
   description = <<EOF
-Settings related specifically to the Observatory API
+Dictionary with environment variable keys and values that will be added to the Cloud Run backend.
+A Google Cloud secret is created for each variable, the variable is then accessed from inside the Cloud Run service
+using berglas.
 EOF
-  type = object({
-    vpc_connector_name = string
-    observatory_db_uri = string
-  })
-
-  default = {
-    vpc_connector_name = null
-    observatory_db_uri = null
-  }
+  type = map(string)
+  sensitive = true
 }
 
-variable "data_api" {
+variable "cloud_run_annotations" {
   description = <<EOF
-Settings related specifically to a Data API
-
-api_key: The elasticsearch api key
-host: The address of the elasticsearch server
+The annotations that are added to the Cloud Run backend service.
 EOF
-  type = object({
-    elasticsearch_api_key = string
-    elasticsearch_host = string
-  })
-
-  default = {
-    elasticsearch_api_key = null
-    elasticsearch_host = null
-  }
+  type = map(string)
+  sensitive = true
 }
