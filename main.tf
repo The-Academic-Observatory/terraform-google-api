@@ -60,7 +60,7 @@ resource "google_cloud_run_service" "api-backend" {
   template {
     spec {
       containers {
-        image = "gcr.io/${var.google_cloud.project_id}/${var.api.name}-api:${var.api.image_tag}"
+        image = var.api.backend_image
         dynamic "env" {
           for_each = toset(nonsensitive(keys(var.env_vars)))
           content {
@@ -72,7 +72,7 @@ resource "google_cloud_run_service" "api-backend" {
       service_account_name = google_service_account.api-backend_service_account.email
     }
     metadata {
-      annotations = merge(var.cloud_run_annotations,  { "updated" = timestamp() })
+      annotations = var.cloud_run_annotations
     }
   }
   traffic {
@@ -138,7 +138,7 @@ resource "google_cloud_run_service" "api-gateway" {
   template {
     spec {
       containers {
-        image = "gcr.io/endpoints-release/endpoints-runtime-serverless:2"
+        image = var.api.gateway_image
         env {
           name = "ENDPOINTS_SERVICE_NAME"
           value = google_endpoints_service.api.service_name
