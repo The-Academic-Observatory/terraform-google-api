@@ -124,14 +124,15 @@ The Google Cloud project settings, the region is used for the two Cloud Run serv
 
 ### name
 General name of the API, used as part of the final full domain name, see the domain name examples below.
-The name has to start with a lowercase letter and can be at most 16 characters long, because of limitations for the 
-account_id of the service accounts. 
 
 Also used to create a unique identifier for the following resources:
 - Cloud Run backend service
 - Cloud Run backend Service Account
 - Cloud Run gateway service
 - Cloud Run gateway Service Account
+
+The name has to start with a lowercase letter and can be at most 16 characters long, because of limitations for the 
+account_id of the service accounts. 
 
 ### domain_name
 Base domain name for the resulting API, see the domain name examples below.
@@ -177,10 +178,18 @@ MY_ENV="sm://my-project-id/MY_ENV"
 The secret value for this variable is obtained using Berglas inside the Cloud Run service, by accessing the value of 
 the Google Cloud secret.
 
+To use Berglas with your API the last lines of the Dockerfile should look like this for example:
+```Docker
+# Install berglas
+COPY --from=gcr.io/berglas/berglas:latest /bin/berglas /bin/berglas
+
+# Run app
+ENTRYPOINT ["/bin/berglas", "exec",  "--", "gunicorn", "-b", "0.0.0.0:8080", "academic_observatory_api.server.app:app"]
+```
+
 ### cloud_run_annotations
 Dictionary with keys and values that will be added as annotations for the Cloud Run backend service, see 
-https://cloud.google.com/run/docs/reference/rest/v1/RevisionTemplate and https://kubernetes.
-io/docs/concepts/overview/working-with-objects/annotations/ for more information.
+https://cloud.google.com/run/docs/reference/rest/v1/RevisionTemplate and https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/ for more information.
 
 ## Domain name examples
 Below are some examples with the resulting full domain name based on different variable settings.
