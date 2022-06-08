@@ -13,8 +13,6 @@ module "api" {
   google_cloud          = var.google_cloud
   name                  = var.name
   domain_name           = var.domain_name
-  subdomain             = var.subdomain
-  environment           = var.environment
   backend_image         = var.backend_image
   gateway_image         = var.gateway_image
   env_vars              = {}

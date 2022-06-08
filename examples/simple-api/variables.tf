@@ -6,7 +6,7 @@ variable "google_cloud" {
   })
   default = {
     project_id  = "my-project-id"
-    credentials = "/path/to/credentials.json"
+    credentials = "json-credentials"
     region      = "us-central1"
   }
 }
@@ -18,12 +18,7 @@ variable "name" {
 
 variable "domain_name" {
   type    = string
-  default = "api.my.domain"
-}
-
-variable "subdomain" {
-  type    = string
-  default = "project_id"
+  default = "my-project-id.observatory.api.my.domain"
 }
 
 variable "backend_image" {
@@ -34,9 +29,4 @@ variable "backend_image" {
 variable "gateway_image" {
   type    = string
   default = "gcr.io/endpoints-release/endpoints-runtime-serverless:2"
-}
-
-variable "environment" {
-  type    = string
-  default = "develop"
 }

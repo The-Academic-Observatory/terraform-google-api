@@ -3,9 +3,8 @@ variable "google_cloud" {
 The Google Cloud settings for the Observatory Platform.
 
 project_id: the Google Cloud project id.
-credentials: the path to the Google Cloud credentials.
+credentials: the Google Cloud credentials in JSON format.
 region: the Google Cloud region.
-zone: the Google Cloud zone.
 EOF
   type = object({
     project_id  = string
@@ -27,24 +26,6 @@ variable "domain_name" {
   description = "The custom domain name for the API, used for the google cloud endpoints service"
   type        = string
   sensitive   = true
-}
-
-variable "subdomain" {
-  description = "Can be either 'project_id' or 'environment', used to determine a prefix for the domain_name"
-  type        = string
-  validation {
-    condition     = var.subdomain == "project_id" || var.subdomain == "environment"
-    error_message = "The subdomain must either be 'project_id' or 'environment'."
-  }
-}
-
-variable "environment" {
-  description = "The environment type: develop, staging or production."
-  type        = string
-  validation {
-    condition     = var.environment == "develop" || var.environment == "staging" || var.environment == "production"
-    error_message = "The environment must be one of 'develop', 'staging' or 'production'."
-  }
 }
 
 variable "backend_image" {

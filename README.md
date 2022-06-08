@@ -8,14 +8,12 @@ module "api" {
   source        = "The-Academic-Observatory/api/google"
   
   name          = "observatory"
-  domain_name   = "api.my.domain"
-  subdomain     = "project_id"
+  domain_name   = "my-project-id.observatory.api.my.domain"
   backend_image = "us-docker.pkg.dev/my-project-id/observatory-platform/observatory-api:0.3.1"
   gateway_image = "gcr.io/endpoints-release/endpoints-runtime-serverless:2"
-  environment   = "develop"
   google_cloud  = {
     project_id  = "my-project-id"
-    credentials = "/path/to/credentials.json"
+    credentials = "json-credentials"
     region      = "us-central1"
   }
   env_vars = {
@@ -29,10 +27,15 @@ module "api" {
 
 ## Requirements
 * A valid GCP project
-* A service account with required permissions
 * A registered custom domain name
-* The service account to be added as a verified domain owner, see the 
-[Google Docs](https://cloud.google.com/run/docs/mapping-custom-domains#add-verified) for more information.
+* A service account with required permissions, that includes the following roles:
+  * Cloud Run Admin (Create Cloud Run instances)
+  * Project IAM Admin (Assign permissions to service accounts)
+  * Secret Manager Admin (Manage the Google Cloud secrets created by env_vars)
+  * Service Account Admin (Create Cloud Run service accounts)
+  * Service Account User (Create Cloud Run instances with custom service account)
+  * Service Management Administrator (Create Cloud Endpoints service)
+  * Service Usage Admin (Enable Google API services)
 * A built Docker image that is stored on the Google Artifact Registry  
 
 ### Additional requirements for a 'Observatory API'
@@ -116,16 +119,21 @@ Concat id:api_key and base64 encode (this final value is what you use for the Te
 printf 'random_id:random_api_key' | base64
 ```
 
-
-
 ## Variables
 ### google_cloud
-The Google Cloud project settings, the region is used for the two Cloud Run services.
+The Google Cloud project settings, the project_id is used for all resources, the region is used for the two Cloud Run 
+services. To create the credentials in a string format accepted by Terraform, run the following Python snippet:
+
+```python
+import json
+
+with open("/path/to/credentials.json", "r") as f:
+    data = f.read()
+credentials = json.dumps(data)
+```
 
 ### name
-General name of the API, used as part of the final full domain name, see the domain name examples below.
-
-Also used to create a unique identifier for the following resources:
+General name of the API, used to create a unique identifier for the following resources:
 - Cloud Run backend service
 - Cloud Run backend Service Account
 - Cloud Run gateway service
@@ -135,22 +143,12 @@ The name has to start with a lowercase letter and can be at most 16 characters l
 account_id of the service accounts. 
 
 ### domain_name
-Base domain name for the resulting API, see the domain name examples below.
-
-### subdomain
-Describes how the subdomain should be determined, this is either set to 'project_id' or 'environment'.  
-When set to 'project_id' the subdomain is derived from the GCP project id, when set to 'environment' the 
-subdomain is derived from the environment variable. 
-See also the domain name examples below.
-
-### environment
-The environment setting, has to be one of 'develop', 'staging', or 'production'. 
-Used for the final full domain name if the subdomain variable is set to 'environment', see the domain name examples 
-below.
+Full domain name for the resulting API, for example `my-project-id.observatory.api.custom.domain`.
+The domain name should already be registered before deploying the Terraform resources.
 
 ### backend_image
-URL of the image used for the Cloud Run backend service. 
-The image should be built beforehand and stored in the Google Artifact Registry.
+URL of the Docker image used for the Cloud Run backend service. 
+The image should be built beforehand and stored e.g. in the Google Artifact Registry.
 
 ### gateway_image
 URL of the image used for the Cloud Run gateway service.
@@ -190,58 +188,3 @@ ENTRYPOINT ["/bin/berglas", "exec",  "--", "gunicorn", "-b", "0.0.0.0:8080", "ac
 ### cloud_run_annotations
 Dictionary with keys and values that will be added as annotations for the Cloud Run backend service, see 
 https://cloud.google.com/run/docs/reference/rest/v1/RevisionTemplate and https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/ for more information.
-
-## Domain name examples
-Below are some examples with the resulting full domain name based on different variable settings.
-
-```hcl
-# Variables
-name         = "observatory"
-domain_name  = "api.my.domain"
-subdomain    = "project_id"
-environment  = "develop"
-google_cloud = {
-  project_id = "my-project-id"
-}
-
-# Full domain name: "my-project-id.observatory.api.my.domain"
-```
-
-```hcl
-# Variables
-name         = "observatory"
-domain_name  = "api.my.domain"
-subdomain    = "environment"
-environment  = "develop"
-google_cloud = {
-  project_id = "my-project-id"
-}
-
-# Full domain name: "develop.observatory.api.my.domain"
-```
-
-```hcl
-# Variables
-name         = "observatory"
-domain_name  = "api.my.domain"
-subdomain    = "environment"
-environment  = "staging"
-google_cloud = {
-  project_id = "my-project-id"
-}
-
-# Full domain name: "staging.observatory.api.my.domain"
-```
-
-```hcl
-# Variables
-name         = "observatory"
-domain_name  = "api.my.domain"
-subdomain    = "environment"
-environment  = "production"
-google_cloud = {
-  project_id = "my-project-id"
-}
-
-# Full domain name: "observatory.api.my.domain"
-```

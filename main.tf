@@ -85,20 +85,13 @@ resource "google_cloud_run_service" "api-backend" {
 # Endpoints service
 ########################################################################################################################
 
-locals {
-  # Use the project id as a subdomain for a project that will not host the final production API. The endpoint service/domain name is
-  # unique and can only be used in 1 project. Once it is created in one project, it can't be fully deleted for 30 days.
-  project_domain_name     = "${var.google_cloud.project_id}.${var.name}.${var.domain_name}"
-  environment_domain_name = var.environment == "production" ? "${var.name}.${var.domain_name}" : "${var.environment}.${var.name}.${var.domain_name}"
-  full_domain_name        = var.subdomain == "project_id" ? local.project_domain_name : local.environment_domain_name
-}
 
 # Create/update endpoints configuration based on OpenAPI
 resource "google_endpoints_service" "api" {
   project      = var.google_cloud.project_id
-  service_name = local.full_domain_name
+  service_name = var.domain_name
   openapi_config = templatefile("./openapi.yaml.tpl", {
-    host            = local.full_domain_name
+    host            = var.domain_name
     backend_address = google_cloud_run_service.api-backend.status[0].url
   })
 }
@@ -153,7 +146,7 @@ resource "google_cloud_run_service" "api-gateway" {
 # Create custom domain mapping for cloud run gateway
 resource "google_cloud_run_domain_mapping" "default" {
   location = google_cloud_run_service.api-gateway.location
-  name     = local.full_domain_name
+  name     = var.domain_name
 
   metadata {
     namespace = var.google_cloud.project_id
