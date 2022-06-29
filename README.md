@@ -180,7 +180,7 @@ This returns:
   "id" : "random_id",
   "name" : "my-dev-api-key",
   "api_key" : "random_api_key"
-  "encoded": "random_id:random_api_key base64 encoded"
+  "encoded" : "random_id:random_api_key base64 encoded"
 }
 ```
 
