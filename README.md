@@ -13,7 +13,6 @@ module "api" {
   gateway_image = "gcr.io/endpoints-release/endpoints-runtime-serverless:2"
   google_cloud  = {
     project_id  = "my-project-id"
-    credentials = "json-credentials"
     region      = "us-central1"
   }
   env_vars = {
@@ -37,6 +36,74 @@ module "api" {
   * Service Management Administrator (Create Cloud Endpoints service)
   * Service Usage Admin (Enable Google API services)
 * A built Docker image that is stored on the Google Artifact Registry  
+* An OpenAPI configuration template, used by the endpoints service.
+
+### OpenAPI configuration template
+The Cloud Endpoints service is based on an OpenAPI specification, the service uses this specification to connect the 
+registered custom domain to the created Cloud Run backend service.   
+This means that for the 'host' setting inside the OpenAPI specification, the custom domain that is set for the 
+'custom_domain' Terraform variable should be used. And for the 'address' setting inside the OpenAPI specification, the 
+address of the created backend Cloud Run instance should be used.  
+In order to do this, the Terraform configuration is set up so that it uses a template of the OpenAPI specification, 
+with the 'host' and 'backend_address' as variables. See an example of the OpenAPI specification template below:
+
+```yaml
+swagger: '2.0'
+info:
+  title: API title
+  description: API description
+  version: 1.0.0
+  contact:
+    email: agent@observatory.academy
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+schemes:
+  - https
+produces:
+  - application/json
+securityDefinitions:
+  api_key:
+    type: "apiKey"
+    name: "key"
+    in: "query"
+security:
+  - api_key: []
+
+############# The two variables 'host' and 'backend_address' are used here
+host: ${host}
+x-google-backend:
+  address: ${backend_address}
+  protocol: h2
+#############
+
+tags:
+- name: Tag
+  description: Tag description
+
+paths:
+  /example:
+    get:
+      tags:
+      - Example
+      summary: Example endpoint
+      operationId: coki_api_base.fixtures.api.example
+      description: Description
+      produces:
+      - application/json
+      responses:
+        200:
+          description: Success
+```
+
+One way to generate this template is by using the `generate-openapi-spec` command from the [coki-api-base](https://github.com/The-Academic-Observatory/coki-api-base) library.  
+For example:
+```
+$ coki-api-base generate-openapi-spec openapi.yaml.jinja2 openapi.yaml.tpl --usage-type cloud_endpoints
+```
+
+The template file should be placed inside the same directory with the 'main.tf' configuration that uses this API module.
 
 ### Additional requirements for a 'Observatory API'
 * The full URI of the SQL database
@@ -59,8 +126,8 @@ output "observatory_db_uri" {
 ```
 
 It is possible to directly use this output inside this Terraform module, by granting the Terraform API workspace 
-access to the main Terraform workspace where the database is created.  
-This can be done from the general workspace settings of the main Terraform workspace, under 'Remote state sharing'.
+access to the main Terraform workspace where the database is created. This can be done from the general workspace 
+settings of the main Terraform workspace, under 'Remote state sharing'.  
 To then access the output from the remote state, add the following to the Terraform API configuration:
 ```hcl
 # Get info from the observatory workspace if this is given
@@ -85,6 +152,8 @@ locals {
 ### Additional requirements for a 'Data API':
 * The address of the Elasticsearch server
 * An API key for the Elasticsearch server
+
+The address of the Elasticsearch server can be obtained from the Elastic portal.
 
 To generate an API key, execute in the Kibana Dev console:
 ```yaml
@@ -111,26 +180,33 @@ This returns:
   "id" : "random_id",
   "name" : "my-dev-api-key",
   "api_key" : "random_api_key"
+  "encoded": "random_id:random_api_key base64 encoded"
 }
 ```
 
-Concat id:api_key and base64 encode (this final value is what you use for the Terraform variable):
-```bash
-printf 'random_id:random_api_key' | base64
+The value of the returned "encoded" field is used for the Terraform variable 'elasticsearch_api_key'.
+
+## Environment Variable
+If you use Terraform Cloud as the backend, the 'GOOGLE_CREDENTIALS' environment variable is used for authentication 
+with the Google Provider. 
+To setup this variable, create a new JSON key for a service account with the required permissions and remove the 
+newlines so that it can be read as a Terraform environment variable.
+To do this, either run in the terminal:
+```shell
+cat /path/to/credentials.json | tr '\n' ' '
 ```
 
-## Variables
-### google_cloud
-The Google Cloud project settings, the project_id is used for all resources, the region is used for the two Cloud Run 
-services. To create the credentials in a string format accepted by Terraform, run the following Python snippet:
+Or run the following Python snippet:
 
 ```python
-import json
-
 with open("/path/to/credentials.json", "r") as f:
-    data = f.read()
-credentials = json.dumps(data)
+    credentials = f.read().replace("\n", "")
 ```
+
+## Terraform Variables
+### google_cloud
+The Google Cloud project settings, the project_id is used for all resources, the region is used for the two Cloud Run 
+services.
 
 ### name
 General name of the API, used to create a unique identifier for the following resources:
@@ -162,7 +238,6 @@ If google_cloud and env_vars are set as follows:
 ```hcl
 google_cloud  = {
   project_id  = "my-project-id"
-  credentials = "/path/to/credentials.json"
   region      = "us-central1"
 }
 env_vars = {
