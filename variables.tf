@@ -3,12 +3,10 @@ variable "google_cloud" {
 The Google Cloud settings for the Observatory Platform.
 
 project_id: the Google Cloud project id.
-credentials: the Google Cloud credentials in JSON format.
 region: the Google Cloud region.
 EOF
   type = object({
     project_id  = string
-    credentials = string
     region      = string
   })
 }
