@@ -23,13 +23,11 @@ variable "name" {
 variable "domain_name" {
   description = "The custom domain name for the API, used for the google cloud endpoints service"
   type        = string
-  sensitive   = true
 }
 
 variable "backend_image" {
   description = "The image URL that will be used for the Cloud Run backend, e.g. 'us-docker.pkg.dev/your-project-name/observatory-platform/observatory-api:0.3.1'"
   type        = string
-  sensitive   = true
 }
 variable "gateway_image" {
   description = "The image URL that will be used for the Cloud Run gateway (endpoints service), e.g. 'gcr.io/endpoints-release/endpoints-runtime-serverless:2'"
@@ -51,5 +49,4 @@ variable "cloud_run_annotations" {
 The annotations that are added to the Cloud Run backend service.
 EOF
   type        = map(string)
-  sensitive   = true
 }
